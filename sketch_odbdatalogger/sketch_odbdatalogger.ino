@@ -1,24 +1,38 @@
 #include <SPI.h>
 #include <SD.h>
+#include <SoftwareSerial.h>
+
 
 const int chipSelect = 4;
 File fh;
 Sd2Card card;
+bool bluetooth_init = false;
+char sqfilename[] = "sq";
 unsigned int log_sequence = 0;
+// Enable HC-05 communication
+SoftwareSerial BTSerial(5, 6);
 
 
 void setup() {
+  pinMode(8, OUTPUT);
+ // digitalWrite(8, HIGH); 
+  delay(1000);
  // Open serial communications and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
+  BTSerial.begin(38400); 
 
+  
   if (self_test() == 0) {
-    Serial.println("Self test OK");
+    Serial.println("OK");
+
+    //Serial.println("Sequence Number");
+    //Serial.println(log_sequence);
   }
   else {
-    Serial.println("Self test failed, refusing to do anything");
+    Serial.println("FAIL");
     while(1);
   }
 
@@ -26,10 +40,9 @@ void setup() {
 }
 
 int write_data_seq(int seq) {
-  fh = SD.open("sq", FILE_WRITE);
-
+  fh = SD.open(sqfilename, FILE_WRITE);
+  
   if(fh) {
-    Serial.println("Komt hij hier niet?");
     fh.println(String(seq));
     fh.close();
     return 0;
@@ -38,15 +51,18 @@ int write_data_seq(int seq) {
 }
 
 int read_data_seq() {
-   fh = SD.open("sq");
+   fh = SD.open(sqfilename);
    String seq;
    int result = 0;
    if(fh) {
     // read until last line 
-    do {
-      seq = fh.read();
-      result = seq.toInt();
-    } while(fh.available());
+    char buffer[5];
+    int i = 0;
+    while(fh.available() && fh.peek() != '\n') {
+      buffer[i] = fh.read();
+      i++;
+    }
+    result = atoi(buffer);
     fh.close();
     return result;  
    }
@@ -57,30 +73,29 @@ int read_data_seq() {
 
 int sd_card_test() {
   if (!card.init(SPI_HALF_SPEED, chipSelect)) {
-    Serial.println("SD card initialisation failed");
-    return -1;
+    return -2;
   }
   if(!SD.begin(chipSelect)) {
-    Serial.println("SD card probing failed");
-    return -1;
+    return -3;
   }
+
+ 
 
   // To test if the SD card is usable, we are going to do a read/write test. 
 
   // first try to see if there is a sequence file to read, 
   log_sequence = read_data_seq();
 
-  if(log_sequence == -1) {
+  if(log_sequence < 0) {
     // could be fresh SD card, try to write new logsequence
-    if(write_data_seq(0) == -1) {
-      Serial.println("SD Card write test failed");  
-      return -1;
+    if(write_data_seq(0) < 0) {
+      return -4;
     } 
   }
   else {
-    
-    log_sequence += 1;
-    Serial.println(log_sequence);
+    // Existing file found, delete it and write the sequence to the file.
+    SD.remove(sqfilename);
+    log_sequence = log_sequence + 1;
     write_data_seq(log_sequence);
   }
   // We can now assume there is a file to read, try to read it and if it fails, something is wrong with SD card
@@ -88,20 +103,19 @@ int sd_card_test() {
   log_sequence = read_data_seq();
 
   if(log_sequence == -1) {
-    Serial.print("SD Card read test failed");
-    return -1;    
+    return -5;    
   }
   return 0;
 }
 
 int self_test() {
-  Serial.println("Starting self test....");
-  // Test if the SD card module is connected and working as intended 
-  if(sd_card_test() == 0) {
-    Serial.println("SD Card OK");
+  // Test if the SD card module is connected and working as intended
+  int sd_card_test_result = sd_card_test(); 
+  if(sd_card_test_result == 0) {
+    Serial.println("SD_OK");
   }
   else {
-    Serial.println("SD Card test failed");
+    Serial.println("SD_FAIL(" + String(sd_card_test_result) + ")");
     return -1;
   }
   return 0;
@@ -109,7 +123,15 @@ int self_test() {
 
 void loop() {
 
+/*if(!bluetooth_init) {
+  digitalWrite(8, HIGH);
+  delay(2000);
+  digitalWrite(8, LOW);
+}*/
+  if (BTSerial.available())    // read from HC-05 and send to Arduino Serial Monitor
+  Serial.write(BTSerial.read());
+  if (Serial.available())     // Keep reading from Arduino Serial Monitor and send to HC-05
+  BTSerial.write(Serial.read());
   //Serial.println(log_sequence);
   // put your main code here, to run repeatedly:
-
 }
