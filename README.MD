@@ -28,3 +28,32 @@ AT+LINK=f859,71,3efe3a
 
 Useful info on how to setup serial port on linux for bluetooth SPP profile
 http://www.userk.co.uk/arduino-bluetooth-linux/
+
+
+as root run following commands
+
+rfcomm bind 0 20:19:09:26:03:28 1
+
+if busy then run (rfcomm release 0)
+configure minicom with /dev/rfcomm0
+sudo minicom -s -c on
+
+
+
+connection the emulator to the bluetooth interface requires socat
+run following command to relay bluetooth arduino stuff to elm emulator
+socat /dev/rfcomm0,raw,echo=0 /dev/pts/1,raw,echo=0
+
+Running the emulator so we have something to connect to.
+https://github.com/Ircama/ELM327-emulator
+
+PIDS for connecting
+https://github.com/brendan-w/python-OBD/blob/master/obd/commands.py
+
+ELM manual
+https://www.elmelectronics.com/wp-content/uploads/2017/01/ELM327DS.pdf
+
+
+0902 (get VIN number)
+010C (get engine RPM)
+0105 (get coolant temp)

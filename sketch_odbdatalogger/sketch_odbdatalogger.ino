@@ -6,7 +6,6 @@
 const int chipSelect = 4;
 File fh;
 Sd2Card card;
-bool bluetooth_init = false;
 char sqfilename[] = "sq";
 unsigned int log_sequence = 0;
 // Enable HC-05 communication
@@ -71,6 +70,11 @@ int read_data_seq() {
    }
 }
 
+int bluetooth_elm_test() {
+
+  return -1;
+}
+
 int sd_card_test() {
   if (!card.init(SPI_HALF_SPEED, chipSelect)) {
     return -2;
@@ -110,28 +114,28 @@ int sd_card_test() {
 
 int self_test() {
   // Test if the SD card module is connected and working as intended
-  int sd_card_test_result = sd_card_test(); 
+  int sd_card_test_result = sd_card_test();
+  int bluetooth_elm_test_result = bluetooth_elm_test();
+  int result = 0;
+  if(bluetooth_elm_test_result == 0) {
+    Serial.println("BLT_ELMCONN_OK");
+  }
+  else {
+    Serial.println("BLT_ELMCONN_FAIL(" + String(bluetooth_elm_test_result) + ")");
+    result = -1;
+  }
   if(sd_card_test_result == 0) {
     Serial.println("SD_OK");
   }
   else {
     Serial.println("SD_FAIL(" + String(sd_card_test_result) + ")");
-    return -1;
+    result = -1;
   }
-  return 0;
+
+  return result;
 }
 
 void loop() {
 
-/*if(!bluetooth_init) {
-  digitalWrite(8, HIGH);
-  delay(2000);
-  digitalWrite(8, LOW);
-}*/
-  if (BTSerial.available())    // read from HC-05 and send to Arduino Serial Monitor
-  Serial.write(BTSerial.read());
-  if (Serial.available())     // Keep reading from Arduino Serial Monitor and send to HC-05
-  BTSerial.write(Serial.read());
-  //Serial.println(log_sequence);
   // put your main code here, to run repeatedly:
 }
