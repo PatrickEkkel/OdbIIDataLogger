@@ -44,6 +44,10 @@ connection the emulator to the bluetooth interface requires socat
 run following command to relay bluetooth arduino stuff to elm emulator
 socat /dev/rfcomm0,raw,echo=0 /dev/pts/1,raw,echo=0
 
+run tio with -l option so we can sniff the serial connection and pass it to test_connection.py
+
+tio -l /tmp/bluetooth_comms /dev/rfcomm0
+
 Running the emulator so we have something to connect to.
 https://github.com/Ircama/ELM327-emulator
 

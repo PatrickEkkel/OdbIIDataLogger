@@ -12,7 +12,7 @@ ELM_LP_ACTIVE = b'OK'
 
 def write_to_elm(elm_command):
     buffer = bytearray()
-    elm = serial.Serial('/dev/pts/1')
+    elm = serial.Serial('/dev/pts/4')
     #print(bytearray(elm_command))
     elm_command = elm_command + '\r'
     elm.write(elm_command.encode())

@@ -8,6 +8,7 @@ File fh;
 Sd2Card card;
 char sqfilename[] = "sq";
 unsigned int log_sequence = 0;
+char ATI_RESPONSE[] = "ELM327 v1.5\0";
 // Enable HC-05 communication
 SoftwareSerial BTSerial(5, 6);
 
@@ -71,7 +72,39 @@ int read_data_seq() {
 }
 
 int bluetooth_elm_test() {
+  char receive_buffer[15];
+  int pointer_position = 0;
+  int match_position = 0;
+  int retries = 0;
+  int result = 0;
+  while(retries < 10) {
+    pointer_position = 0;
+    match_position = 0;
+    BTSerial.write("ATI\r");
 
+    //Serial.write('x');
+    while(BTSerial.available()) {
+      receive_buffer[pointer_position] = BTSerial.read();
+      //Serial.write(receive_buffer[pointer_position]);
+      
+      if (receive_buffer[pointer_position] == ATI_RESPONSE[pointer_position]) {
+        match_position++;
+      }
+      //Serial.println(String(match_position));
+      if(receive_buffer[pointer_position] == '>' && match_position == 11) {
+        return 0;
+      }
+      Serial.print("BLT_RETRY");
+
+  
+      pointer_position++;
+    }
+
+    receive_buffer[pointer_position] = '\0';
+    delay(1500);
+    retries++;
+    
+  }
   return -1;
 }
 
